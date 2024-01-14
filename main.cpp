@@ -15,12 +15,15 @@ DigitalOut blueIndicator(LED2);
 UnbufferedSerial uartUsb(USBTX, USBRX, 115200);
 
 bool driverSatDown = false;
+bool lockedOut = false;
 
 void inputsInit();
 void outputsInit();
 void displayWelcome();
 
 void checkSafety();
+void ignitionCheck();
+void soundAlarm();
 
 // main() runs in its own thread in the OS
 int main()
@@ -31,9 +34,9 @@ int main()
 
     while (true) {
         displayWelcome();
-
         checkSafety();
-
+        ignitionCheck();
+        soundAlarm();
     }
 }
 
@@ -65,5 +68,43 @@ void checkSafety() {
         greenIndicator = ON;
     } else {
         greenIndicator = OFF;
+    }
+}
+
+void ignitionCheck() {
+    if(ignition && !lockedOut) {
+        if(greenIndicator) {
+            greenIndicator = OFF;
+            blueIndicator = ON;
+            uartUsb.write("Engine started.\r\n", 17);
+        } else {
+            lockedOut = true;
+            
+            uartUsb.write("Ignition inhibited\r\n", 20);
+
+            if(!driverSeatOccSensor) {
+                uartUsb.write("Driver seat not occupied.\r\n", 27);
+            }
+
+            if(!passengerSeatOccSensor) {
+                uartUsb.write("Passenger seat not occupied.\r\n", 30);
+            }
+
+            if(!driverSeatbeltSensor) {
+                uartUsb.write("Driver seatbelt not fastened.\r\n", 31);
+            }
+            
+            if(!passengerSeatbeltSensor) {
+                uartUsb.write("Passenger seatbelt not fastened.\r\n", 34);
+            }
+        }
+    }
+    
+}
+
+void soundAlarm() {
+    if(lockedOut) {
+        alarm.output();
+        alarm = LOW;
     }
 }
