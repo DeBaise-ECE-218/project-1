@@ -16,6 +16,7 @@ UnbufferedSerial uartUsb(USBTX, USBRX, 115200);
 
 bool driverSatDown = false;
 bool lockedOut = false;
+bool engineOn = false;
 
 void inputsInit();
 void outputsInit();
@@ -64,7 +65,7 @@ void displayWelcome() {
 }
 
 void checkSafety() {
-    if(driverSeatOccSensor && driverSeatbeltSensor && passengerSeatOccSensor && passengerSeatbeltSensor) {
+    if(driverSeatOccSensor && driverSeatbeltSensor && passengerSeatOccSensor && passengerSeatbeltSensor && !engineOn) {
         greenIndicator = ON;
     } else {
         greenIndicator = OFF;
@@ -72,10 +73,11 @@ void checkSafety() {
 }
 
 void ignitionCheck() {
-    if(ignition && !lockedOut) {
+    if(ignition && !lockedOut && !engineOn) {
         if(greenIndicator) {
             greenIndicator = OFF;
             blueIndicator = ON;
+            engineOn = ON;
             uartUsb.write("Engine started.\r\n", 17);
         } else {
             lockedOut = true;
