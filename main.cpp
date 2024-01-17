@@ -1,6 +1,8 @@
+/* Embed libraries */
 #include "mbed.h"
 #include "arm_book_lib.h"
 
+/* Declare inputs & outputs */
 DigitalIn driverSeatOccSensor(D7);
 DigitalIn passengerSeatOccSensor(D6);
 DigitalIn driverSeatbeltSensor(D5);
@@ -14,6 +16,7 @@ DigitalOut blueIndicator(LED2);
 
 UnbufferedSerial uartUsb(USBTX, USBRX, 115200);
 
+/* Declare global variables and functions */
 bool driverSatDown = false;
 bool lockedOut = false;
 bool engineOn = false;
@@ -26,13 +29,15 @@ void checkSafety();
 void ignitionCheck();
 void soundAlarm();
 
-// main() runs in its own thread in the OS
+// Create logic for program
 int main()
 {
 
+    // initialize inputs & outputs
     inputsInit();
     outputsInit();
 
+    // continually run logic
     while (true) {
         displayWelcome();
         checkSafety();
@@ -41,7 +46,7 @@ int main()
     }
 }
 
-
+/* Function implementation to initialize all inputs */
 void inputsInit() {
     driverSeatOccSensor.mode(PullDown);
     passengerSeatOccSensor.mode(PullDown);
@@ -52,11 +57,13 @@ void inputsInit() {
     alarm.input();
 }
 
+/* Function implementation to initialize all outputs */
 void outputsInit() {
     greenIndicator = OFF;
     blueIndicator = OFF;
 }
 
+/* Function implementation to decide whether or not to display the welcome message */
 void displayWelcome() {
     if(driverSeatOccSensor && !driverSatDown) {
         uartUsb.write("Welcome to enhanced alarm system model 218-W24\r\n", 48);
@@ -64,6 +71,7 @@ void displayWelcome() {
     }
 }
 
+/* Function implementation to turn on the Green LED (or not) based on sensor data */
 void checkSafety() {
     if(driverSeatOccSensor && driverSeatbeltSensor && passengerSeatOccSensor && passengerSeatbeltSensor && !engineOn) {
         greenIndicator = ON;
@@ -72,14 +80,21 @@ void checkSafety() {
     }
 }
 
+/* Function implementation to check if car can start (or not) and display appropriate messages */
 void ignitionCheck() {
+
+    // if ignition is pressed and we are not locked out and the engine isn't already on
     if(ignition && !lockedOut && !engineOn) {
+
+        // if our green safety indicator is lit
         if(greenIndicator) {
+            // turn on engine
             greenIndicator = OFF;
             blueIndicator = ON;
             engineOn = ON;
             uartUsb.write("Engine started.\r\n", 17);
         } else {
+            // lock user out and display why
             lockedOut = true;
             
             uartUsb.write("Ignition inhibited\r\n", 20);
@@ -104,6 +119,7 @@ void ignitionCheck() {
     
 }
 
+/* Function implementation to check if alarm should sound or not */
 void soundAlarm() {
     if(lockedOut) {
         alarm.output();
